@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b45"><title>{% block title %}FarmMitra{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body{% block body_class %}{% endblock %}>
+  <div class="leaves"><span>🍃</span><span>🌾</span><span>🌻</span><span>🍃</span><span>🌾</span></div>
+  <header class="topbar"><a class="brand" href="{{ url_for('index') }}"><span class="brand-icon">🌱</span><span>FarmMitra<small>{{ tr('Your simple farming assistant') }}</small></span></a><a class="language-link" href="{{ url_for('language') }}">🌐 {{ languages[language] }}</a><button id="voice-toggle" class="voice-btn" title="{{ tr('Toggle voice') }}">🎙️</button></header>
+  <main class="container">
+    {% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}">{{ tr(message) }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>FarmMitra <span>•</span> {{ tr('Practical support for your farm') }}</footer>
+  
+  <audio id="audio-player" style="display:none;"></audio>
+  
+  <script>
+    const currentLang = {{ language|tojson }};
+    let isVoiceEnabled = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    
+    // Make voice state globally accessible
+    window.isVoiceEnabled = false;
+    
+    // Voice toggle
+    document.getElementById('voice-toggle').addEventListener('click', () => {
+      isVoiceEnabled = !isVoiceEnabled;
+      window.isVoiceEnabled = isVoiceEnabled;
+      document.getElementById('voice-toggle').classList.toggle('active', isVoiceEnabled);
+      if (isVoiceEnabled) {
+        // Check if on guided form page - read the question
+        const questionText = document.getElementById('question-text')?.textContent || '';
+        const questionDesc = document.getElementById('question-desc')?.textContent || '';
+        if (questionText) {
+          speakText(questionText + '. ' + questionDesc);
+        } else {
+          // Otherwise read only the main heading/title, not entire page
+          const h1 = document.querySelector('h1')?.textContent || '';
+          const h2 = document.querySelector('h2')?.textContent || '';
+          if (h1 || h2) {
+            speakText((h1 || '') + '. ' + (h2 || ''));
+          } else {
+            speakText({{ t.speak|tojson }});
+          }
+        }
+      }
+    });
+    
+    // Text to speech
+    function speakText(text) {
+      if (!isVoiceEnabled) return;
+      
+      fetch('/api/text-to-speech', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: text, lang: currentLang})
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.audio) {
+          const audio = document.getElementById('audio-player');
+          audio.src = 'data:audio/mp3;base64,' + data.audio;
+          audio.play();
+        }
+      });
+    }
+    
+    // Speech to text
+    async function startSpeechRecognition() {
+      if (!navigator.mediaDevices) {
+        alert({{ tr('Microphone access not available')|tojson }});
+        return null;
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      
+      return new Promise((resolve) => {
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, {type: 'audio/wav'});
+          const formData = new FormData();
+          formData.append('audio', blob, 'audio.wav');
+          
+          const response = await fetch('/api/speech-to-text', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          resolve(data.text || data.error);
+        };
+        mediaRecorder.start();
+      });
+    }
+    
+    function stopSpeechRecognition() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }
+  </script>
+</body>
+</html>

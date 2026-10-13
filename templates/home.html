@@ -1,0 +1,50 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Home') }} · FarmMitra{% endblock %}{% block body_class %} class="home-page"{% endblock %}{% block content %}<section class="hero"><div><div class="eyebrow">{{ tr('YOUR FARM, AT A GLANCE') }}</div><h1>{{ tr(farm['crop']) }}</h1><p>{{ age }} {{ tr('days after planting') }}{% if farm['variety'] %} · {{ farm['variety'] }}{% endif %}</p><p class="location-pill">📍 {{ farm['location'] }}</p></div><div class="crop-illustration">🌿</div></section>
+<section class="weather-card card" id="weather-section"><div class="weather-heading"><span>🌦️</span><div><h2>{{ t.today }}</h2><small id="weather-loading">{{ tr('Loading weather...') }}</small></div></div><div id="weather-content"><div class="weather-placeholder"><span>{{ tr('Weather updates') }}</span><span class="weather-badge">{{ tr('Loading') }}</span></div></div><p class="muted" id="weather-alert"></p></section>
+<section class="actions"><h2>{{ t.need }}</h2><div class="action-grid">{% for name, icon, key, title, desc in [('leaf','🍃','leaf',t.leaf,'Photo-based leaf check'),('health','🌱','health',t.health,'Track your crop over time'),('water','💧','water',t.water,'Simple irrigation guidance'),('harvest','🌾','harvest',t.harvest,'Plan for harvest'),('ask','🎙️','ask',t.ask,'Get help with a question'),('recommend','🌾🤖','recommend',t.recommend,'Crop recommendation based on your location')] %}<a class="action-card" href="{{ url_for('feature',name=name) }}"><span class="action-icon">{{ icon }}</span><span><strong>{{ title }}</strong><small>{{ tr(desc) }}</small></span><span class="arrow">→</span></a>{% endfor %}</div></section>
+<section class="settings-row"><div><strong>{{ tr('Your crop details') }}</strong><small>{{ tr(farm['crop']) }} · {{ tr('planted') }} {{ farm['sowing_date'] }} · {{ farm['location'] }}</small></div><form method="post" action="{{ url_for('reset') }}"><button class="text-button" type="submit">{{ tr('Update crop') }}</button></form></section>
+
+<script>
+// Load weather on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const weatherUi = {
+    unavailable: {{ tr('Weather unavailable')|tojson }}, updates: {{ tr('Weather updates')|tojson }},
+    loading: {{ tr('Loading')|tojson }}, error: {{ tr('Error')|tojson }}, live: {{ tr('Live weather')|tojson }},
+    rain: {{ tr('Rain expected - adjust irrigation accordingly')|tojson }}
+  };
+  fetch('/api/weather')
+    .then(r => r.json())
+    .then(data => {
+      if (data.error && data.unavailable) {
+        document.getElementById('weather-loading').textContent = weatherUi.unavailable;
+        document.getElementById('weather-content').innerHTML = `
+          <div class="weather-placeholder">
+            <span>🌦️</span>
+            <span class="weather-badge">${data.error}</span>
+          </div>
+        `;
+      } else if (data.error) {
+        document.getElementById('weather-loading').textContent = weatherUi.unavailable;
+        document.getElementById('weather-content').innerHTML = `<div class="weather-placeholder"><span>${weatherUi.updates}</span><span class="weather-badge">${weatherUi.error}</span></div>`;
+      } else {
+        document.getElementById('weather-loading').textContent = weatherUi.live;
+        document.getElementById('weather-content').innerHTML = `
+          <div class="weather-display">
+            <span class="weather-temp">${data.current.temp.toFixed(1)}°C</span>
+            <span class="weather-humidity">💧 ${data.current.humidity.toFixed(0)}%</span>
+          </div>
+          <p class="weather-desc">${data.description}</p>
+        `;
+        if (data.current.precipitation > 5) {
+          document.getElementById('weather-alert').textContent = `🚨 ${weatherUi.rain}`;
+          document.getElementById('weather-alert').classList.add('alert');
+        }
+        if (window.isVoiceEnabled) speakText(data.description);
+      }
+    })
+    .catch(err => {
+      document.getElementById('weather-loading').textContent = weatherUi.unavailable;
+      document.getElementById('weather-content').innerHTML = `<div class="weather-placeholder"><span>${weatherUi.updates}</span><span class="weather-badge">${weatherUi.error}</span></div>`;
+    });
+});
+</script>
+{% endblock %}

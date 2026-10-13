@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}{{ tr('Choose language') }} · FarmMitra{% endblock %}
+{% block content %}<section class="welcome card"><div class="eyebrow">🌱 FARM MITRA</div><h1>{{ tr('Your Simple Farming Assistant') }}</h1><p>{{ tr('Choose the language you are comfortable with.') }}</p><form method="post" class="stack"><div class="language-grid">{% for code, label in languages.items() %}<label class="language-option"><input type="radio" name="language" value="{{ code }}" {% if code == language %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div><button class="button primary" type="submit">{{ tr('Continue') }} <span>→</span></button></form></section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Speak welcome message if voice is enabled
+  if (isVoiceEnabled) {
+    speakText({{ tr('Choose your preferred language')|tojson }});
+  }
+});
+</script>
+{% endblock %}

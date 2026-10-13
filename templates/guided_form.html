@@ -1,0 +1,207 @@
+{% extends 'base.html' %}{% block title %}{{ title }} · FarmMitra{% endblock %}{% block body_class %} class="feature-{{ name }}"{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('index') }}">← {{ tr('Back to home') }}</a>
+<section class="feature-card card">
+  <span class="feature-icon">{{ icon }}</span>
+  <div class="eyebrow">FARMMITRA</div>
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+
+  <!-- Guided Form Container -->
+  <div id="guided-form-container" class="guided-form">
+    <!-- Progress Bar -->
+    <div class="progress-header">
+      <span id="step-indicator">{{ tr('step') }} 1 {{ tr('of') }} {{ total_steps }}</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Question Container -->
+    <div id="question-container" class="question-box">
+      <h2 id="question-text"></h2>
+      <p id="question-desc" class="question-description"></p>
+      <div id="input-container"></div>
+      <div id="error-message" class="error-message" style="display:none;"></div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="form-navigation">
+      <button id="back-btn" class="button secondary" style="display:none;">{{ tr('back') }}</button>
+      <button id="next-btn" class="button primary">{{ tr('next') }}</button>
+      <button id="submit-btn" class="button primary" style="display:none;">{{ tr('submit') }}</button>
+      <button id="cancel-btn" class="button secondary">{{ tr('cancel') }}</button>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen" style="display:none;">
+    <div class="loading-spinner"></div>
+    <p id="loading-message">{{ tr('loading') }}</p>
+  </div>
+
+  <!-- Result Container -->
+  <div id="result-container" class="result-container" style="display:none;"></div>
+</section>
+
+<script>
+// Data from server
+window.featureData = {
+  name: "{{ name }}",
+  language: {{ language|tojson }},
+  totalSteps: {{ total_steps }},
+  questions: {{ questions|tojson }},
+  ui: {
+    step: {{ tr('step')|tojson }},
+    of: {{ tr('of')|tojson }},
+    next: {{ tr('next')|tojson }},
+    back: {{ tr('back')|tojson }},
+    submit: {{ tr('submit')|tojson }},
+    cancel: {{ tr('cancel')|tojson }},
+    loading: {{ tr('loading')|tojson }},
+    checking: {{ tr('checking')|tojson }},
+    getting_advice: {{ tr('getting_advice')|tojson }},
+    estimating: {{ tr('estimating')|tojson }},
+    please_answer: {{ tr('please_answer')|tojson }},
+    invalid_value: {{ tr('invalid_value')|tojson }},
+    value_required: {{ tr('value_required')|tojson }},
+    error: {{ tr('Something went wrong. Please try again.')|tojson }}
+  }
+};
+</script>
+
+<script src="{{ url_for('static', filename='guided_form.js') }}"></script>
+
+<style>
+.guided-form {
+  margin-top: 1.5rem;
+}
+
+.progress-header {
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.question-box {
+  margin-bottom: 1.5rem;
+}
+
+.question-box h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #3a2a1c;
+}
+
+.question-description {
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+#input-container input,
+#input-container select,
+#input-container textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+#input-container input:focus,
+#input-container select:focus,
+#input-container textarea:focus {
+  outline: none;
+  border-color: #176b45;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.form-navigation {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.form-navigation button {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+.loading-screen {
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #176b45;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.result-container {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #fde9bd;
+  border-radius: 8px;
+  border-left: 4px solid #d63c3c;
+}
+
+.result-content h3 {
+  color: #176b45;
+  margin-bottom: 1rem;
+}
+
+.result-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+/* Mobile responsive */
+@media(max-width:600px){
+  .guided-form{
+    padding: 1rem;
+  }
+  .question-box h2{
+    font-size: 1.25rem;
+  }
+  .form-navigation button{
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+  }
+  .result-container{
+    padding: 1rem;
+  }
+}
+</style>
+{% endblock %}

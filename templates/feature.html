@@ -1,0 +1,458 @@
+{% extends 'base.html' %}{% block title %}{{ title }} · FarmMitra{% endblock %}{% block body_class %} class="feature-{{ name }}"{% endblock %}
+{% block content %}<a class="back-link" href="{{ url_for('index') }}">← {{ tr('Back to home') }}</a><section class="feature-card card"><span class="feature-icon">{{ icon }}</span><div class="eyebrow">FARMMITRA</div><h1>{{ title }}</h1><p>{{ description }}</p>
+
+{% if name == 'leaf' %}
+<form id="analyze-form" method="post" enctype="multipart/form-data" class="stack upload-form">
+  <input type="hidden" name="feature" value="{{ name }}">
+  <label class="upload-box">
+    <span class="upload-symbol">📷</span>
+    <strong>{{ tr('Choose a crop photo') }}</strong>
+    <small>{{ tr('Take a photo or select one from your gallery (JPG, PNG, WebP · up to 8 MB)') }}</small>
+    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required id="photo-input">
+  </label>
+  <button class="button primary" type="submit" id="analyze-btn">{{ tr('Analyze') }}</button>
+</form>
+
+{% elif name == 'health' %}
+<div class="stack">
+  <form id="health-form" class="stack">
+    <label><strong>{{ tr('Soil Moisture (%)') }}</strong><input type="number" name="soil_moisture" min="0" max="100" placeholder="{{ tr('e.g., 45') }}" required></label>
+    <label><strong>{{ tr('Soil pH') }}</strong><input type="number" name="soil_ph" min="0" max="14" step="0.1" placeholder="{{ tr('e.g., 7.1') }}" required></label>
+    <label><strong>{{ tr('Nitrogen (N)') }}</strong><select name="nitrogen" required><option value="">{{ tr('Select level...') }}</option><option value="low">{{ tr('Low') }}</option><option value="medium">{{ tr('Medium') }}</option><option value="adequate">{{ tr('Adequate') }}</option></select></label>
+    <label><strong>{{ tr('Phosphorus (P)') }}</strong><select name="phosphorus" required><option value="">{{ tr('Select level...') }}</option><option value="low">{{ tr('Low') }}</option><option value="medium">{{ tr('Medium') }}</option><option value="adequate">{{ tr('Adequate') }}</option></select></label>
+    <label><strong>{{ tr('Potassium (K)') }}</strong><select name="potassium" required><option value="">{{ tr('Select level...') }}</option><option value="low">{{ tr('Low') }}</option><option value="medium">{{ tr('Medium') }}</option><option value="adequate">{{ tr('Adequate') }}</option></select></label>
+    <label><strong>{{ tr('Electrical Conductivity (EC dS/m)') }}</strong><input type="number" name="ec" min="0" max="10" step="0.1" placeholder="{{ tr('e.g., 1.1') }}" required></label>
+    <label><strong>{{ tr('Any issues observed?') }}</strong><textarea name="issues" rows="2" placeholder="{{ tr('Describe any problems (yellowing, spots, wilting, etc.)') }}"></textarea></label>
+    <button class="button primary" type="submit" id="analyze-btn" style="width:100%">{{ tr('Check Crop Health') }}</button>
+  </form>
+</div>
+
+{% elif name == 'water' %}
+<div class="advice-box" id="irrigation-box">
+  <div class="advice-label">{{ tr('Watering advice') }}</div>
+  <p>{{ tr('Enter soil moisture and crop growth stage. Temperature, humidity, and wind are added automatically from current weather data.') }}</p>
+  <form id="irrigation-form" class="stack">
+    <label><strong>{{ tr('Soil Moisture (%)') }}</strong><input type="number" name="soil_moisture" min="0" max="100" step="0.1" placeholder="{{ tr('e.g., 28') }}" required></label>
+    <label><strong>{{ tr('Crop Growth Stage') }}</strong><select name="growth_stage"><option value="vegetative">{{ tr('Vegetative') }}</option><option value="flowering">{{ tr('Flowering') }}</option><option value="fruiting">{{ tr('Fruit development') }}</option></select></label>
+    <button class="button primary" type="submit">{{ tr('Get Watering Advice') }}</button>
+  </form>
+  <div id="irrigation-result" aria-live="polite" style="display:none">
+    <h2 id="irrigation-advice"></h2><p id="irrigation-reason"></p>
+    <p><strong>{{ tr('Priority') }}:</strong> <span id="irrigation-priority"></span> · <strong>{{ tr('Water stress score') }}:</strong> <span id="irrigation-score"></span>/100</p>
+    <p id="irrigation-conditions"></p>
+  </div>
+</div>
+
+{% elif name == 'harvest' %}
+<div class="advice-box" id="harvest-box">
+  <div class="advice-label">{{ tr('Harvest estimate') }}</div>
+  <p>{{ tr('Enter your crop details and current field observations to see an estimate.') }}</p>
+  <form id="harvest-form" class="stack">
+    <label><strong>{{ tr('Crop type') }}</strong><select name="crop" required><option value="">{{ tr('Select crop...') }}</option>{% for crop in ['Cotton','Paddy','Chilli','Maize','Wheat','Sugarcane','Tomato','Potato','Onion','Groundnut','Soybean','Mustard','Sunflower','Brinjal'] %}<option value="{{ crop }}">{{ tr(crop) }}</option>{% endfor %}</select></label>
+    <label><strong>{{ tr('Planting date') }}</strong><input type="date" name="planting_date" required></label>
+    <label><strong>{{ tr('Growth stage') }}</strong><select name="growth_stage" required><option value="vegetative">{{ tr('Vegetative') }}</option><option value="flowering">{{ tr('Flowering') }}</option><option value="fruiting">{{ tr('Fruiting') }}</option><option value="maturity">{{ tr('Maturity') }}</option></select></label>
+    <label><strong>{{ tr('Plant height (cm)') }}</strong><input type="number" name="plant_height" min="0" step="0.1" required></label>
+    <label><strong>{{ tr('Number of branches') }}</strong><input type="number" name="branches" min="0" step="1" required></label>
+    <label><strong>{{ tr('Number of fruits/bolls') }}</strong><input type="number" name="fruit_count" min="0" step="1" required></label>
+    <label><strong>{{ tr('Average fruit/boll size (cm)') }}</strong><input type="number" name="fruit_size" min="0" step="0.1" required></label>
+    <label><strong>{{ tr('Soil moisture (%)') }}</strong><input type="number" name="soil_moisture" min="0" max="100" step="0.1" required></label>
+    <label><strong>{{ tr('Temperature (°C)') }}</strong><input type="number" name="temperature" step="0.1" required></label>
+    <label><strong>{{ tr('Humidity (%)') }}</strong><input type="number" name="humidity" min="0" max="100" step="0.1" required></label>
+    <label><strong>{{ tr('Rainfall (mm)') }}</strong><input type="number" name="rainfall" min="0" step="0.1" required></label>
+    <label><strong>{{ tr('Fertilizer/NPK level') }}</strong><select name="npk" required><option value="low">{{ tr('Low') }}</option><option value="medium" selected>{{ tr('Medium') }}</option><option value="adequate">{{ tr('Adequate') }}</option></select></label>
+    <label><strong>{{ tr('Pest/disease severity (%)') }}</strong><input type="number" name="pest_severity" min="0" max="100" step="1" required></label>
+    <button class="button primary" type="submit">{{ tr('Estimate Harvest') }}</button>
+  </form>
+  <div id="harvest-result" aria-live="polite" style="display:none">
+    <h2 id="harvest-estimate"></h2>
+    <p id="harvest-details"></p>
+    <div id="harvest-progress"></div>
+  </div>
+</div>
+
+{% elif name == 'recommend' %}
+<!-- Crop Recommendation Feature -->
+<div class="advice-box" id="recommend-box">
+  <div class="advice-label">🌾 {{ tr('AI Crop Recommendation') }}</div>
+  <p>{{ tr('Based on your location, current weather and soil, get the best crops to cultivate right now.') }}</p>
+  <div style="margin: 1rem 0; padding: 0.75rem; background: #f0faf3; border-radius: 8px; font-size: 0.9rem;">
+    📍 <strong>{{ tr('Your farm location') }}:</strong> <span id="farm-location">{{ farm['location'] if farm else '' }}</span><br>
+    🌱 <strong>{{ tr('Soil type') }}:</strong> {{ farm['soil_type'] if farm and farm['soil_type'] else tr('Not specified') }}<br>
+    💧 <strong>{{ tr('Irrigation') }}:</strong> {{ farm['irrigation'] if farm and farm['irrigation'] else tr('Not specified') }}
+  </div>
+  <button class="button primary" id="recommend-btn" style="width:100%">🤖 {{ tr('Get Crop Recommendation') }}</button>
+  <div id="recommend-result" class="answer-result" style="display:none; margin-top: 1rem;"></div>
+</div>
+
+{% else %}
+<!-- Ask FarmMitra - Fully Voice-Based -->
+<div class="advice-box ask-farmmitra-box">
+  <div class="advice-label">🎙️ {{ tr('Your question') }}</div>
+  <p style="color:#555; font-size:0.9rem;">{{ tr('Tap record, speak your farming question, then tap Stop and Send.') }}</p>
+
+  <!-- Voice recording section -->
+  <div class="voice-section" id="voice-section">
+    <div class="voice-status" id="voice-status">{{ t.speak }}</div>
+    <div class="voice-buttons">
+      <button id="record-btn" class="button voice-record-btn" title="{{ t.speak }}">
+        🎙️ {{ tr('Record') }}
+      </button>
+      <button id="stop-btn" class="button voice-stop-btn" style="display:none;" title="{{ t.stop }}">
+        ⏹️ {{ tr('Stop') }}
+      </button>
+    </div>
+    <div id="recording-indicator" style="display:none; text-align:center; color:#e74c3c; font-weight:bold; margin-top:0.5rem;">
+      ● {{ t.listen }}
+    </div>
+  </div>
+
+  <!-- Transcribed or typed question -->
+  <div style="margin-top: 1rem;">
+    <label><strong>{{ tr('Your question') }}:</strong></label>
+    <textarea rows="3" id="question-input" placeholder="{{ tr('Speak using the mic above, or type your question here…') }}" style="width:100%; margin-top:0.4rem; padding:0.5rem; border-radius:6px; border:1px solid #ccc; font-size:1rem;"></textarea>
+  </div>
+
+  <!-- Send button -->
+  <button class="button primary" id="ask-btn" style="width:100%; margin-top:0.75rem;">
+    ➤ {{ tr('Send') }}
+  </button>
+
+  <!-- Answer -->
+  <div id="answer-result" class="answer-result" style="display:none; margin-top:1rem;"></div>
+
+  <!-- Auto-speak toggle -->
+  <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+    <input type="checkbox" id="autospeak-toggle" checked>
+    <label for="autospeak-toggle" style="font-size:0.9rem;">🔊 {{ tr('Auto-speak answer') }}</label>
+  </div>
+</div>
+{% endif %}
+
+{% if name in ['leaf', 'health'] %}
+<div id="analysis-result" class="analysis-result" style="display:none;">
+  <div class="result-content" id="result-text"></div>
+  <button class="button secondary" id="reanalyze-btn">{{ t.reanalyze }}</button>
+</div>
+{% endif %}
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const featureName = '{{ name }}';
+  const ui = {
+    analyze: {{ tr('Analyze')|tojson }}, checkHealth: {{ tr('Check Crop Health')|tojson }},
+    thankYou: {{ tr('Thank you for your feedback!')|tojson }},
+    expectedYield: {{ tr('Expected yield')|tojson }}, daysOld: {{ tr('days old')|tojson }},
+    daysToHarvest: {{ tr('days to typical harvest time')|tojson }}, progress: {{ tr('toward harvest readiness')|tojson }},
+    error: {{ tr('Something went wrong. Please try again.')|tojson }}, ask: {{ tr('Ask')|tojson }},
+    send: {{ tr('Send')|tojson }}, listening: {{ t.listen|tojson }}, speak: {{ t.speak|tojson }},
+    micError: {{ tr('Microphone access not available')|tojson }}
+  };
+
+  // ─── LEAF ANALYSIS ────────────────────────────────────────────────────────
+  if (featureName === 'leaf') {
+    document.getElementById('analyze-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append('feature', featureName);
+      document.getElementById('analyze-btn').textContent = '{{ t.analyzing }}';
+      document.getElementById('analyze-btn').disabled = true;
+      try {
+        const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.error) {
+          alert(data.error);
+        } else {
+          renderAnalysisResult(data.result);
+          document.getElementById('analysis-result').style.display = 'block';
+          if (window.isVoiceEnabled) speakText(data.result);
+        }
+      } catch(err) { alert(ui.error); }
+      finally {
+        document.getElementById('analyze-btn').textContent = ui.analyze;
+        document.getElementById('analyze-btn').disabled = false;
+      }
+    });
+  }
+
+  // ─── CROP HEALTH ──────────────────────────────────────────────────────────
+  if (featureName === 'health') {
+    document.getElementById('health-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append('feature', featureName);
+      document.getElementById('analyze-btn').textContent = '{{ t.analyzing }}';
+      document.getElementById('analyze-btn').disabled = true;
+      try {
+        const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.error) { alert(data.error); }
+        else {
+          renderAnalysisResult(data.result);
+          document.getElementById('analysis-result').style.display = 'block';
+          if (window.isVoiceEnabled) speakText(data.result);
+        }
+      } catch(err) { alert(ui.error); }
+      finally {
+        document.getElementById('analyze-btn').textContent = ui.checkHealth;
+        document.getElementById('analyze-btn').disabled = false;
+      }
+    });
+  }
+
+  // ─── FEEDBACK & RE-ANALYZE ────────────────────────────────────────────────
+  if (featureName === 'leaf' || featureName === 'health') {
+    document.querySelectorAll('.feedback-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        fetch('/api/feedback', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({analysis_id: 1, helpful: btn.dataset.helpful === 'true'})
+        });
+        alert(ui.thankYou);
+      });
+    });
+    document.getElementById('reanalyze-btn').addEventListener('click', async () => {
+      const response = await fetch('/api/reanalyze/1', {method: 'POST'});
+      const data = await response.json();
+      if (data.error) alert(data.error);
+      else { renderAnalysisResult(data.result); if (isVoiceEnabled) speakText(data.result); }
+    });
+  }
+
+  // ─── RENDER ANALYSIS RESULT ───────────────────────────────────────────────
+  function renderAnalysisResult(text) {
+    const container = document.getElementById('result-text');
+    container.replaceChildren();
+    const cleanText = (text || '').replace(/\\\*/g, '*').replace(/\r/g, '').trim();
+    const headingPattern = /(?:^|\s)(?:\*\*)?(\d+)\.\s*([^:*\n]+):(?:\*\*)?/g;
+    const headings = [...cleanText.matchAll(headingPattern)];
+    if (!headings.length) {
+      const p = document.createElement('p'); p.textContent = cleanText; container.appendChild(p); return;
+    }
+    headings.forEach((match, index) => {
+      const start = match.index + match[0].length;
+      const end = index + 1 < headings.length ? headings[index + 1].index : cleanText.length;
+      const section = document.createElement('section'); section.className = 'analysis-section';
+      const title = document.createElement('h3'); title.textContent = match[2].trim().replace(/\*\*/g, '');
+      section.appendChild(title);
+      const body = cleanText.slice(start, end).trim();
+      const bulletParts = body.split(/\s+\\\?\*\s+/).map(p => p.trim()).filter(Boolean);
+      if (bulletParts.length > 1) {
+        const list = document.createElement('ul');
+        bulletParts.forEach(part => { const item = document.createElement('li'); item.textContent = part.replace(/\*\*/g, '').replace(/\\\*/g, '*'); list.appendChild(item); });
+        section.appendChild(list);
+      } else {
+        const p = document.createElement('p'); p.textContent = body.replace(/\*\*/g, '').replace(/\\\*/g, '*'); section.appendChild(p);
+      }
+      container.appendChild(section);
+    });
+  }
+
+  // ─── IRRIGATION ───────────────────────────────────────────────────────────
+  if (featureName === 'water') {
+    const irrigationLabels = {
+      reason: {{ tr('Reason')|tojson }}, soil: {{ tr('Soil Moisture')|tojson }},
+      temperature: {{ tr('Temperature')|tojson }}, humidity: {{ tr('Humidity')|tojson }},
+      wind: {{ tr('Wind')|tojson }}, error: {{ tr('Could not get watering advice.')|tojson }}
+    };
+    document.getElementById('irrigation-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/irrigation', { method: 'POST', body: new FormData(event.target) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || irrigationLabels.error);
+        document.getElementById('irrigation-advice').textContent = data.advice;
+        document.getElementById('irrigation-reason').textContent = `${irrigationLabels.reason}: ${data.reason}`;
+        document.getElementById('irrigation-priority').textContent = data.priority;
+        document.getElementById('irrigation-score').textContent = data.water_stress_score;
+        const c = data.conditions;
+        document.getElementById('irrigation-conditions').textContent = `${irrigationLabels.soil}: ${c.soil_moisture}% · ${irrigationLabels.temperature}: ${c.temperature}°C · ${irrigationLabels.humidity}: ${c.humidity}% · ${irrigationLabels.wind}: ${c.wind_speed} km/h`;
+        document.getElementById('irrigation-result').style.display = 'block';
+        if (isVoiceEnabled) speakText(`${data.advice}. ${data.reason}`);
+      } catch (error) {
+        document.getElementById('irrigation-advice').textContent = error instanceof TypeError ? irrigationLabels.error : (error.message || irrigationLabels.error);
+        document.getElementById('irrigation-result').style.display = 'block';
+      } finally { button.disabled = false; }
+    });
+  }
+
+  // ─── HARVEST ──────────────────────────────────────────────────────────────
+  if (featureName === 'harvest') {
+    document.getElementById('harvest-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/maturity', { method: 'POST', body: new FormData(event.target) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || ui.error);
+        document.getElementById('harvest-estimate').textContent = data.estimate;
+        document.getElementById('harvest-details').textContent = `${data.crop} · ${data.age_days} ${ui.daysOld} · ${data.growth_stage} · ${ui.expectedYield}: ${data.yield_kg_per_acre} kg/acre · ${data.days_remaining} ${ui.daysToHarvest}`;
+        document.getElementById('harvest-progress').innerHTML = `<div class="progress-bar"><div class="progress-fill" style="width: ${data.progress}%"></div></div><small>${data.progress}% ${ui.progress}</small>`;
+        document.getElementById('harvest-result').style.display = 'block';
+        if (isVoiceEnabled) speakText(data.estimate);
+      } catch (error) {
+        document.getElementById('harvest-estimate').textContent = error instanceof TypeError ? ui.error : (error.message || ui.error);
+        document.getElementById('harvest-result').style.display = 'block';
+      } finally { button.disabled = false; }
+    });
+  }
+
+  // ─── CROP RECOMMENDATION ──────────────────────────────────────────────────
+  if (featureName === 'recommend') {
+    document.getElementById('recommend-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('recommend-btn');
+      btn.disabled = true;
+      btn.textContent = '{{ t.analyzing }}';
+      const resultDiv = document.getElementById('recommend-result');
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = '{{ t.analyzing }}';
+      try {
+        const response = await fetch('/api/crop-recommend', { method: 'POST' });
+        const data = await response.json();
+        if (data.error) {
+          resultDiv.textContent = data.error;
+        } else {
+          resultDiv.innerHTML = '<pre style="white-space:pre-wrap; font-family:inherit;">' + data.recommendation + '</pre>';
+          if (isVoiceEnabled) speakText(data.recommendation);
+        }
+      } catch (err) {
+        resultDiv.textContent = ui.error;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🤖 {{ tr("Get Crop Recommendation") }}';
+      }
+    });
+    // Auto-load recommendation on page open
+    document.getElementById('recommend-btn').click();
+  }
+
+  // ─── ASK FARMMITRA - VOICE-FIRST ─────────────────────────────────────────
+  if (featureName === 'ask') {
+    let localRecorder = null;
+    let localChunks = [];
+
+    const recordBtn = document.getElementById('record-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const statusEl = document.getElementById('voice-status');
+    const indicator = document.getElementById('recording-indicator');
+    const questionInput = document.getElementById('question-input');
+    const askBtn = document.getElementById('ask-btn');
+    const answerDiv = document.getElementById('answer-result');
+    const autospeakToggle = document.getElementById('autospeak-toggle');
+
+    // Start recording
+    recordBtn.addEventListener('click', async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert(ui.micError);
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        localChunks = [];
+        localRecorder = new MediaRecorder(stream);
+        localRecorder.ondataavailable = e => { if (e.data.size > 0) localChunks.push(e.data); };
+        localRecorder.start(100); // collect chunks every 100ms
+
+        recordBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        indicator.style.display = 'block';
+        statusEl.textContent = ui.listening;
+        statusEl.style.color = '#e74c3c';
+      } catch (err) {
+        alert(ui.micError + ': ' + err.message);
+      }
+    });
+
+    // Stop recording → transcribe
+    stopBtn.addEventListener('click', async () => {
+      if (!localRecorder || localRecorder.state === 'inactive') return;
+
+      localRecorder.stop();
+      localRecorder.stream.getTracks().forEach(t => t.stop());
+
+      stopBtn.style.display = 'none';
+      recordBtn.style.display = 'inline-block';
+      indicator.style.display = 'none';
+      statusEl.textContent = '{{ t.analyzing }}';
+      statusEl.style.color = '#888';
+
+      await new Promise(resolve => {
+        localRecorder.onstop = async () => {
+          try {
+            const mimeType = localChunks[0]?.type || 'audio/webm';
+            const blob = new Blob(localChunks, { type: mimeType });
+            const formData = new FormData();
+            formData.append('audio', blob, 'recording.webm');
+
+            const response = await fetch('/api/speech-to-text', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.text) {
+              questionInput.value = data.text;
+              statusEl.textContent = '✅ ' + data.text.substring(0, 60) + (data.text.length > 60 ? '…' : '');
+              statusEl.style.color = '#176b45';
+            } else {
+              statusEl.textContent = ui.speak;
+              statusEl.style.color = '#888';
+              if (data.error) questionInput.placeholder = data.error;
+            }
+          } catch (err) {
+            statusEl.textContent = ui.speak;
+            statusEl.style.color = '#888';
+          }
+          resolve();
+        };
+      });
+    });
+
+    // Send question to Gemini
+    askBtn.addEventListener('click', async () => {
+      const question = questionInput.value.trim();
+      if (!question) { alert('{{ tr("Please type or speak a question first.") }}'); return; }
+
+      askBtn.textContent = '{{ t.analyzing }}';
+      askBtn.disabled = true;
+      answerDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: question })
+        });
+        const data = await response.json();
+        if (data.error) {
+          alert(data.error);
+        } else {
+          answerDiv.innerHTML = '<pre style="white-space:pre-wrap; font-family:inherit;">' + data.answer + '</pre>';
+          answerDiv.style.display = 'block';
+          // Auto-speak if toggle is on
+          if (autospeakToggle.checked) {
+            speakText(data.answer);
+          }
+        }
+      } catch (err) {
+        alert(ui.error);
+      } finally {
+        askBtn.textContent = '➤ {{ tr("Send") }}';
+        askBtn.disabled = false;
+      }
+    });
+  }
+});
+</script>
+
+<style>
+.ask-farmmitra-box { padding: 1.25rem; }
+.voice-section { text-align: center; padding: 1rem 0; }
+.voice-status { font-size: 1rem; color: #555; margin-bottom: 0.75rem; min-height: 1.5rem; }
+.voice-buttons { display: flex; gap: 1rem; justify-content: center; }
+.voice-record-btn { background: #176b45; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 50px; font-size: 1rem; cursor: pointer; }
+.voice-record-btn:hover { background: #0f4f32; }
+.voice-stop-btn { background: #e74c3c; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 50px; font-size: 1rem; cursor: pointer; }
+.voice-stop-btn:hover { background: #c0392b; }
+.answer-result { background: #f0faf3; border-left: 4px solid #176b45; padding: 1rem; border-radius: 6px; line-height: 1.6; }
+</style>
+{% endblock %}
