@@ -11,8 +11,20 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
 # Translation and AI
-import speech_recognition as sr
-from gtts import gTTS
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    sr = None
+
+try:
+    from gtts import gTTS
+    GTTS_AVAILABLE = True
+except ImportError:
+    GTTS_AVAILABLE = False
+    gTTS = None
+
 import google.generativeai as genai
 import requests
 
@@ -315,6 +327,8 @@ def translate_text(text, target_lang):
 
 def text_to_speech(text, lang):
     """Convert text to speech and return as base64 audio"""
+    if not GTTS_AVAILABLE:
+        return None
     try:
         tts = gTTS(text=text, lang=lang)
         # Use unique filename with timestamp to avoid conflicts
